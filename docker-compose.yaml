@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  calculator:
+    container_name: "calculator_server"
+    build:
+      context: ./
+      dockerfile: Dockerfile.calculator
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    networks:
+      - calculator-network
+
+  generator:
+    container_name: "generator"
+    build:
+      context: ./
+      dockerfile: Dockerfile.generator
+    depends_on:
+      calculator:
+        condition: service_started
+    networks:
+      - calculator-network
+
+networks:
+  calculator-network:
+    driver: bridge

@@ -1,0 +1,1 @@
+/Users/vlad/Documents/projects/myProjects/calculator-server/include/rust_lib/target/release/libcalculator_rust.dylib: /Users/vlad/Documents/projects/myProjects/calculator-server/include/rust_lib/src/lib.rs
