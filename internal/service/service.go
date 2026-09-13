@@ -23,7 +23,8 @@ type Service struct {
 	pr       prometheus
 	sumValue int64
 	subValue int64
-	mt       sync.Mutex
+	sumMt    sync.Mutex
+	subMt    sync.Mutex
 	calc     calculator
 }
 
@@ -36,22 +37,39 @@ func New(l zerolog.Logger, pr prometheus, calc calculator) *Service {
 }
 
 func (s *Service) Calculate(value int64) {
-	s.mt.Lock()
-	s.sumValue = s.pr.CMetric(
-		s.calc.Add,
-		s.sumValue,
-		value,
+	var wg sync.WaitGroup
+
+	wg.Go(
+		func() {
+			s.sumMt.Lock()
+			defer s.sumMt.Unlock()
+
+			s.sumValue = s.pr.CMetric(
+				s.calc.Add,
+				s.sumValue,
+				value,
+			)
+		},
 	)
-	s.subValue = s.pr.RustMetric(
-		s.calc.Sub,
-		s.subValue,
-		value,
+	wg.Go(
+		func() {
+			s.subMt.Lock()
+			defer s.subMt.Unlock()
+
+			s.subValue = s.pr.RustMetric(
+				s.calc.Sub,
+				s.subValue,
+				value,
+			)
+		},
 	)
-	s.mt.Unlock()
+
+	wg.Wait()
 }
 
 func (s *Service) PeriodicPrinter(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -64,9 +82,14 @@ func (s *Service) PeriodicPrinter(ctx context.Context, interval time.Duration) {
 }
 
 func (s *Service) LogTotals(label string) {
-	s.mt.Lock()
-	sum, sub := s.sumValue, s.subValue
-	s.mt.Unlock()
+	s.sumMt.Lock()
+	s.subMt.Lock()
+
+	sum := s.sumValue
+	sub := s.subValue
+
+	s.sumMt.Unlock()
+	s.subMt.Unlock()
 
 	s.l.Info().Msgf("[%s] sum=%d sub=%d", label, sum, sub)
 }
