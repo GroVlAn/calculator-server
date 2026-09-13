@@ -53,6 +53,8 @@ func main() {
 
 	fls := setFlags()
 
+	l.Info().Msgf("Generator started: %d workers -> %s", *fls.workersCount, *fls.baseUrl)
+
 	client := &http.Client{
 		Timeout: httpClientTimeout,
 		Transport: &http.Transport{
