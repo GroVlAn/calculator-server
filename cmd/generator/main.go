@@ -164,13 +164,13 @@ func sendRequest(client *http.Client, baseURL string) func(context.Context, int)
 	}
 }
 
-func workerPool[T, R any](
+func workerPool(
 	ctx context.Context,
 	workerCount int,
-	input <-chan T,
-	transform func(ctx context.Context, e T) R,
-) <-chan R {
-	result := make(chan R)
+	input <-chan int,
+	transform func(ctx context.Context, e int) response,
+) <-chan response {
+	result := make(chan response)
 	var wg sync.WaitGroup
 
 	for range workerCount {
